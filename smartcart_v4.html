@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SmartCart – Best Grocery Prices Near You</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+  :root {
+    --bg: #0f1117; --surface: #1a1d27; --surface2: #222636;
+    --accent: #00e5a0; --accent2: #ff6b35; --accent3: #ffd166;
+    --text: #f0f2ff; --muted: #6b7080; --border: rgba(255,255,255,0.07); --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; padding: 32px 24px; max-width: 640px; margin: 0 auto; }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 2rem; letter-spacing: -0.03em; background: linear-gradient(135deg, var(--accent), #00b4d8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 4px; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; font-weight: 300; }
+  .api-banner { background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.25); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: border-color 0.2s; }
+  .api-banner:hover { border-color: rgba(255,209,102,0.5); }
+  .api-banner-text { flex: 1; }
+  .api-banner-title { font-size: 0.82rem; font-weight: 600; color: var(--accent3); margin-bottom: 2px; }
+  .api-banner-sub { font-size: 0.75rem; color: var(--muted); }
+  .api-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; align-items: center; justify-content: center; padding: 24px; }
+  .api-modal-overlay.open { display: flex; }
+  .api-modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 420px; }
+  .api-modal h3 { font-family: 'Syne', sans-serif; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+  .api-modal p { font-size: 0.82rem; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .api-modal a { color: var(--accent); }
+  .api-input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 10px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; outline: none; margin-bottom: 12px; }
+  .api-input:focus { border-color: var(--accent); }
+  .btn-row { display: flex; gap: 10px; }
+  .btn { flex: 1; background: var(--accent); color: #0f1117; border: none; border-radius: 10px; padding: 12px; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: opacity 0.2s; }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost { background: var(--surface2); color: var(--muted); }
+  .btn-full { width: 100%; padding: 14px; font-size: 1rem; border-radius: var(--radius); margin-top: 0; }
+  .config-row { display: flex; gap: 12px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .config-label { font-size: 0.8rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
+  .config-input { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--text); padding: 8px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; width: 90px; outline: none; transition: border-color 0.2s; }
+  .config-input:focus { border-color: var(--accent); }
+  .input-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; transition: border-color 0.2s; }
+  .input-area:focus-within { border-color: rgba(0,229,160,0.3); }
+  .input-label { font-size: 0.75rem; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  textarea { width: 100%; background: transparent; border: none; outline: none; color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.95rem; resize: none; line-height: 1.7; min-height: 130px; }
+  textarea::placeholder { color: var(--muted); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+  .tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; font-size: 0.8rem; color: var(--text); }
+  .results { margin-top: 28px; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 12px; }
+  .winner-card { background: linear-gradient(135deg, rgba(0,229,160,0.12), rgba(0,180,216,0.08)); border: 1px solid rgba(0,229,160,0.25); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+  .winner-badge { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: #0f1117; border-radius: 20px; padding: 4px 12px; font-size: 0.72rem; font-weight: 700; font-family: 'Syne', sans-serif; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 10px; }
+  .winner-store { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 4px; }
+  .winner-total { font-size: 0.9rem; color: var(--muted); }
+  .winner-total span { color: var(--accent); font-weight: 600; }
+  .stores-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+  .store-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; }
+  .store-name { font-weight: 500; font-size: 0.95rem; }
+  .store-distance { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .store-price { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; }
+  .store-savings { font-size: 0.75rem; color: var(--accent); text-align: right; }
+  .sale-section { background: rgba(255,209,102,0.06); border: 1px solid rgba(255,209,102,0.2); border-radius: var(--radius); padding: 16px; margin-bottom: 20px; }
+  .sale-title { font-family: 'Syne', sans-serif; font-size: 0.8rem; font-weight: 700; color: var(--accent3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+  .sale-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.87rem; }
+  .sale-item:last-child { border-bottom: none; }
+  .sale-store-tag { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+  .sale-price-info { text-align: right; }
+  .original-price { text-decoration: line-through; color: var(--muted); font-size: 0.78rem; }
+  .sale-price { color: var(--accent3); font-weight: 600; }
+  .items-section { margin-bottom: 20px; }
+  .item-row { display: flex; align-items: flex-start; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+  .item-row:last-child { border-bottom: none; }
+  .item-name { font-size: 0.9rem; font-weight: 500; flex: 1; }
+  .item-best { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .item-price { font-size: 0.9rem; font-weight: 600; white-space: nowrap; }
+  .sale-badge { display: inline-block; background: rgba(255,107,53,0.15); color: var(--accent2); border: 1px solid rgba(255,107,53,0.3); border-radius: 6px; padding: 2px 7px; font-size: 0.7rem; font-weight: 600; margin-left: 6px; vertical-align: middle; }
+  .loading { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 0.9rem; padding: 20px 0; }
+  .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .disclaimer { font-size: 0.72rem; color: var(--muted); margin-top: 16px; line-height: 1.5; padding: 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .error-box { color: #ff6b6b; padding: 16px; background: rgba(255,107,107,0.08); border-radius: 12px; border: 1px solid rgba(255,107,107,0.2); font-size: 0.88rem; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>🛒 SmartCart</h1>
+<p class="subtitle">Find the best grocery prices near you, automatically.</p>
+
+<div class="api-banner" onclick="openApiModal()">
+  <div>🔑</div>
+  <div class="api-banner-text">
+    <div class="api-banner-title" id="apiStatus">API Key Required</div>
+    <div class="api-banner-sub" id="apiSub">Tap to add your Anthropic API key</div>
+  </div>
+  <div style="color:var(--muted);font-size:0.8rem;">edit</div>
+</div>
+
+<div class="api-modal-overlay" id="apiModal">
+  <div class="api-modal">
+    <h3>🔑 Your API Key</h3>
+    <p>Your key is stored only in your browser — never sent anywhere except directly to Anthropic.<br><br>
+    Get one free at <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys.</p>
+    <input class="api-input" type="password" id="apiKeyInput" placeholder="sk-ant-...">
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="closeApiModal()">Cancel</button>
+      <button class="btn" onclick="saveApiKey()">Save Key</button>
+    </div>
+  </div>
+</div>
+
+<div class="config-row">
+  <span class="config-label">📮 ZIP code:</span>
+  <input type="text" class="config-input" id="zipcode" value="29577" maxlength="5">
+  <span class="config-label">📍 Radius:</span>
+  <input type="number" class="config-input" id="radius" value="10" min="1" max="50">
+  <span class="config-label">miles</span>
+</div>
+
+<div class="input-area">
+  <div class="input-label">Your grocery list — one item per line</div>
+  <textarea id="groceryInput" placeholder="milk&#10;eggs&#10;chicken breast&#10;avocado&#10;sourdough bread&#10;orange juice"></textarea>
+</div>
+
+<button class="btn btn-full" id="findBtn" onclick="findPrices()">Find Best Prices →</button>
+
+<div id="tagRow" class="tag-row" style="display:none"></div>
+<div id="results"></div>
+
+<script>
+const SYSTEM_PROMPT = `You are a grocery price comparison assistant. Given a list of grocery items, a ZIP code, and search radius, return realistic price comparisons for nearby stores.
+
+Return ONLY valid JSON. No markdown. No explanation. No backticks. Just the raw JSON object:
+{
+  "stores": [{ "name": "Store Name", "distance": 2.3, "total": 34.57, "available_items": 8, "total_items": 10 }],
+  "items": [{ "name": "item name", "best_store": "Store Name", "best_price": 2.99, "on_sale": false, "sale_details": null }],
+  "sales": [{ "item": "item name", "store": "Store Name", "original_price": 4.99, "sale_price": 2.99, "deal": "Buy 1 Get 1 50% off" }],
+  "recommended_store": "Store Name",
+  "total_savings_vs_most_expensive": 8.42
+}
+Use realistic store names for the ZIP code region. Include 3-5 stores. Use realistic 2025 prices. Include 1-3 sales when plausible.`;
+
+// API key stored in localStorage (browser only)
+function loadApiKey() {
+  const key = localStorage.getItem('smartcart_api_key');
+  if (key) {
+    document.getElementById('apiStatus').textContent = 'API Key saved ✓';
+    document.getElementById('apiSub').textContent = 'sk-ant-...' + key.slice(-4);
+  }
+}
+function openApiModal() {
+  const key = localStorage.getItem('smartcart_api_key') || '';
+  document.getElementById('apiKeyInput').value = key;
+  document.getElementById('apiModal').classList.add('open');
+}
+function closeApiModal() { document.getElementById('apiModal').classList.remove('open'); }
+function saveApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) { alert('That doesn\'t look like a valid Anthropic API key. It should start with sk-ant-'); return; }
+  localStorage.setItem('smartcart_api_key', key);
+  document.getElementById('apiStatus').textContent = 'API Key saved ✓';
+  document.getElementById('apiSub').textContent = 'sk-ant-...' + key.slice(-4);
+  closeApiModal();
+}
+
+async function findPrices() {
+  const apiKey = localStorage.getItem('smartcart_api_key');
+  if (!apiKey) { openApiModal(); return; }
+
+  const items = document.getElementById('groceryInput').value.trim();
+  const radius = document.getElementById('radius').value;
+  const zip = document.getElementById('zipcode').value.trim();
+  if (!items) { alert('Please enter some grocery items first!'); return; }
+  if (!zip || zip.length !== 5) { alert('Please enter a valid 5-digit ZIP code.'); return; }
+
+  const btn = document.getElementById('findBtn');
+  btn.disabled = true;
+  btn.textContent = 'Searching nearby stores...';
+
+  const itemList = items.split('\n').map(i => i.trim()).filter(Boolean);
+  const tagRow = document.getElementById('tagRow');
+  tagRow.style.display = 'flex';
+  tagRow.innerHTML = itemList.map(item => `<span class="tag">🛍 ${item}</span>`).join('');
+
+  document.getElementById('results').innerHTML = `<div class="loading"><div class="spinner"></div>Checking prices within ${radius} miles of ${zip}...</div>`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: `ZIP: ${zip}\nRadius: ${radius} miles\nItems:\n${itemList.join('\n')}` }]
+      })
+    });
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content.map(i => i.text || '').join('');
+    const result = JSON.parse(text.replace(/```json|```/g, '').trim());
+    renderResults(result, radius);
+  } catch (err) {
+    document.getElementById('results').innerHTML = `<div class="error-box">⚠️ <strong>Error:</strong> ${err.message}<br><br>Double-check your API key is correct and has credits available.</div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Find Best Prices →';
+}
+
+function renderResults(data, radius) {
+  const sorted = [...data.stores].sort((a, b) => a.total - b.total);
+  const winner = sorted[0];
+  const mostExp = sorted[sorted.length - 1];
+  let html = '<div class="results">';
+
+  html += `<div class="winner-card">
+    <div class="winner-badge">⚡ Best Value</div>
+    <div class="winner-store">${winner.name}</div>
+    <div class="winner-total">Est. total: <span>$${winner.total.toFixed(2)}</span> · ${winner.distance} mi away · ${winner.available_items}/${winner.total_items} items</div>
+    ${data.total_savings_vs_most_expensive > 0 ? `<div style="margin-top:8px;font-size:0.82rem;color:var(--accent);">💰 Save ~$${data.total_savings_vs_most_expensive.toFixed(2)} vs. ${mostExp.name}</div>` : ''}
+  </div>`;
+
+  html += `<div class="section-title">All Stores Within ${radius} Miles</div><div class="stores-grid">`;
+  sorted.forEach((store, i) => {
+    const diff = (store.total - winner.total).toFixed(2);
+    html += `<div class="store-row"><div><div class="store-name">${i === 0 ? '🏆 ' : ''}${store.name}</div><div class="store-distance">${store.distance} mi · ${store.available_items}/${store.total_items} items</div></div><div><div class="store-price">$${store.total.toFixed(2)}</div><div class="store-savings">${i === 0 ? 'Best price' : '+$' + diff + ' more'}</div></div></div>`;
+  });
+  html += '</div>';
+
+  if (data.sales && data.sales.length > 0) {
+    html += `<div class="sale-section"><div class="sale-title">🏷️ Active Sales on Your List</div>`;
+    data.sales.forEach(s => {
+      html += `<div class="sale-item"><div><div>${s.item} <span class="sale-badge">SALE</span></div><div class="sale-store-tag">${s.store} · ${s.deal}</div></div><div class="sale-price-info"><div class="original-price">$${s.original_price.toFixed(2)}</div><div class="sale-price">$${s.sale_price.toFixed(2)}</div></div></div>`;
+    });
+    html += '</div>';
+  }
+
+  html += `<div class="items-section"><div class="section-title">Item-by-Item Breakdown</div>`;
+  data.items.forEach(item => {
+    html += `<div class="item-row"><div><div class="item-name">${item.name}${item.on_sale ? '<span class="sale-badge">SALE</span>' : ''}</div><div class="item-best">Best at ${item.best_store}</div></div><div class="item-price">$${item.best_price.toFixed(2)}</div></div>`;
+  });
+  html += '</div>';
+
+  html += `<div class="disclaimer">⚠️ <strong>MVP Note:</strong> Prices are AI-estimated. Production version would use live store APIs for real pricing.</div></div>`;
+  document.getElementById('results').innerHTML = html;
+}
+
+loadApiKey();
+</script>
+</body>
+</html>
